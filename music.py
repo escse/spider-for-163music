@@ -3,17 +3,16 @@ import requests
 from bs4 import BeautifulSoup
 from Crypto.Cipher import AES
 import base64, json
-
-userid = 304193210
-homepage = "http://music.163.com/#/user/home?id={}".format(userid)
-ranklist = "http://music.163.com/#/user/songs/rank?id={}".format(782188957)
+import threading, time
+from multiprocessing.pool import ThreadPool
 
 root = "http://music.163.com/"
 limits = 100
 s = requests.session()
+threadsNum = 20 # change as you like , better not too large
 
 class encrypt:
-    # offset 和 limits 控制评论
+    # offset 和 limits control a set of comments
     # [offset, offset + limits)
     cache = dict()
     
@@ -56,6 +55,12 @@ class encrypt:
             encrypt.cache[str(offset)] = d
         return encrypt.cache[str(offset)]
 
+def task(argv):
+    comments, url, i = argv
+    response = s.post(url, data=encrypt.data(i+1))
+    data = json.loads(response.content)
+    comments.extend(data["comments"])
+    
 class song:
     def __init__(self, sid, name=None):
         self.name = name
@@ -76,19 +81,25 @@ class song:
         #       avatarUrl   expertTags  remarkName  userId*
         #       locationInfo    userType    experts authStatus
         #       nicknamevipType
-
+        
         url = "http://music.163.com/weapi/v1/resource/comments/R_SO_4_{}/?csrf_token=".format(self.id)
         response = s.post(url, data=encrypt.data(0))
+        if response.status_code == 503:
+            print(response)
+            print("Template unavailable, wait...")
+            exit(0)
         data = json.loads(response.content)
-        comments = data["comments"]
+        self.comments = data["comments"]
         # hotComments = data["hotComments"]
-        num = int(data["total"])   # 评论数
+        num = int(data["total"])   # comments num
         print(u"Song {name} id = {id} has {num} comments".format(name=self.name, id=self.id, num=num))
-        for i in range((num - 1) / limits + 1):
-            response = s.post(url, data=encrypt.data(i+1))
-            data = json.loads(response.content)
-            comments.extend(data["comments"])
-        self.comments = comments
+        workers = ThreadPool(threadsNum)
+        workers.map(task, [(self.comments, url, i) for i in range((num - 1) / limits + 1)])
+        # threads = [threading.Thread(target=task, args=(self.comments, url, i)) for i in range((num - 1) / limits + 1)]
+        # for t in threads:
+        #     t.start()
+        # for t in threads:
+        #     t.join()
     
     def searchUserId(self, uid):
         if not self.comments:
@@ -104,7 +115,7 @@ class playlist:
         url = root + "playlist?id=" + str(pid)
         html = s.get(url, headers=headers).content
         soup = BeautifulSoup(html, 'html.parser')
-        songs = soup.find(id="song-list-pre-cache").find_all("li")
+        songs = soup.find(id="song-list-pre-cache").find_all("li") #TODO sometimes no songs return only template
         # songs = soup.find('ul',{'class':'f-hide'})
         self.songs = [song(li.a["href"].split("=")[1], li.string) for li in songs]
         self.soup = soup
@@ -129,15 +140,11 @@ class user:
         response = s.post(url, data=encrypt.data(0))
         data = json.loads(response.content)
         # self.playlists = 
+        # TODO
         # http://music.163.com/weapi/v1/play/record?csrf_token=
         # http://music.163.com/weapi/user/playlist?csrf_token=
+
+# for test
 # songid = [234267, 298894]
 userid = [304193210, 36419305]
 playlistid = [422051335, 648764947, 644137792, 642036961, 508154476]
-# user(userid[1])
-# song(songid).searchUserId(88781991)
-# song(298894).searchUserId(88781991)
-# 参考资料 https://www.zhihu.com/question/36081767 
-# https://www.zhihu.com/question/41505181?sort=created
-for pid in playlistid:
-    playlist(pid).searchUserId(userid[0])
