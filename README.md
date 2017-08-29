@@ -9,7 +9,7 @@
 5. 歌曲中的评论
 
 ### 说明
-[说明.md](./blob/master/notes.md)
+[说明.md](./notes.md)
 
 ### Done
 - [x] 从用户主页抓取歌单
