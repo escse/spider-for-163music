@@ -16,13 +16,13 @@
 从歌曲中搜索用户评论
 ```
 s = song(443008) # 以id创建一首歌的instance
-s.searchUserId(36419305)
+s.searchUserId(36419305) # 搜索该id的用户
 ```
 
 从歌单中搜索所有歌曲中用户的评论
 ```
 p = playlist(35547018) # 以id创建一个歌单的instance
-p.searchUserId(36419305)
+p.searchUserId(36419305) # 搜索该id的用户
 ```
 
 
