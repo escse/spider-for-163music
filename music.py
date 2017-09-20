@@ -183,24 +183,3 @@ class user:
 
     def organize(self, data):
         return {d["song"]["id"]: [d["song"]["name"], d["score"]] for d in data}
-
-    def monitor(self, name="week"):
-        while 1:
-            data = self.getRecord(name=name, log=False)
-            if self.monitorDict:
-                flag = 0
-                for d in data:
-                    sid = d["song"]["id"]
-                    if sid in self.monitorDict:
-                        if self.monitorDict[sid][1] != d["score"]:
-                            flag += 1
-                            addScore =  d["score"] - self.monitorDict[sid][1]
-                            print(u"Song {name} has been played for another {t} times".format(name=d["song"]["name"], t=addScore))
-                    if sid not in self.monitorDict:
-                        flag += 1
-                        addScore = d["score"]
-                        print(u"Song {name} has been played for another {t} times".format(name=d["song"]["name"], t=addScore))
-                if flag == 0:
-                    print("No update since last time")
-            self.monitorDict = self.organize(data)
-            time.sleep(10)
