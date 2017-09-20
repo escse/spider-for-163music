@@ -7,7 +7,7 @@ import threading, time
 from multiprocessing.pool import ThreadPool
 
 root = "http://music.163.com/"
-s = requests.session()
+ss = requests.session()
 threadsNum = 50 # change as you like , better not too large
 limits = 100 
 headers = {
@@ -105,11 +105,11 @@ class song:
         #       nicknamevipType
         def task(argv):
             comments, url, i = argv
-            response = s.post(url, headers=headers, data=encrypt.get(getjson("comment", i)))
+            response = ss.post(url, headers=headers, data=encrypt.get(getjson("comment", i)))
             data = json.loads(response.content)
             comments.extend(data["comments"])
         url = root + "weapi/v1/resource/comments/R_SO_4_{}/?csrf_token=".format(self.id)
-        response = s.post(url, data=encrypt.get(getjson("comment", 0)))
+        response = ss.post(url, data=encrypt.get(getjson("comment", 0)))
         if response.status_code == 503:
             print(response)
             print("Template unavailable, wait...")
@@ -133,7 +133,7 @@ class song:
 class playlist:
     def __init__(self, pid):
         url = root + "playlist?id=" + str(pid)
-        html = s.get(url, headers=headers).content
+        html = ss.get(url, headers=headers).content
         soup = BeautifulSoup(html, 'html.parser')
         songs = soup.find(id="song-list-pre-cache").find_all("li") #TODO sometimes no songs return only template
         # songs = soup.find('ul',{'class':'f-hide'})
@@ -151,14 +151,14 @@ class user:
     def __init__(self, uid):
         self.id = str(uid)
         url = root + "user?id=" + self.id
-        html = s.get(url, headers=headers).text
+        html = ss.get(url, headers=headers).text
         # print html.encode("utf8")
         soup = BeautifulSoup(html, 'html.parser')
         self.name = soup.find(id="j-name-wrap").span.string
         self.soup = soup
         self.monitorDict = None
         url = root + "weapi/user/playlist?csrf_token="
-        response = s.post(url, headers=headers, data=encrypt.get(getjson("playlist", self.id)))        
+        response = ss.post(url, headers=headers, data=encrypt.get(getjson("playlist", self.id)))        
         data = json.loads(response.content)
         self.playlists = [d["id"] for d in data["playlist"]]
         
@@ -169,7 +169,7 @@ class user:
         #   a list: playCount, score, song
         #       song: name, id ..
         url = root + "weapi/v1/play/record?csrf_token="
-        response = s.post(url, headers=headers, data=encrypt.get(getjson("record", self.id, name)))
+        response = ss.post(url, headers=headers, data=encrypt.get(getjson("record", self.id, name)))
         if name == "week":
             key = "weekData"
         else:

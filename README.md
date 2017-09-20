@@ -11,6 +11,22 @@
 ### 说明
 [说明.md](./notes.md)
 
+### Example
+
+从歌曲中搜索用户评论
+```
+s = song(443008) # 以id创建一首歌的instance
+s.searchUserId(36419305)
+```
+
+从歌单中搜索所有歌曲中用户的评论
+```
+p = playlist(35547018) # 以id创建一个歌单的instance
+p.searchUserId(36419305)
+```
+
+
+
 ### Done
 - [x] 从用户主页抓取歌单
 - [x] 从歌单中抓取歌曲
